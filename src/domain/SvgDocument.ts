@@ -94,6 +94,17 @@ export class SvgDocument {
     return this.walk(this.rootShapes);
   }
 
+  ancestorsOf(id: string): readonly (string | undefined)[] {
+    const ancestors: (string | undefined)[] = [];
+    let parent = this.parentOf(id);
+    while (parent) {
+      ancestors.push(parent.id);
+      parent = this.parentOf(parent.id);
+    }
+    ancestors.push(undefined);
+    return ancestors;
+  }
+
   clone(): SvgDocument {
     const copy = new SvgDocument(this.width, this.height, this.rootAttributes);
     for (const child of this.rootShapes) copy.insert(child.clone());
