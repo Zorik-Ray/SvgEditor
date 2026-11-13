@@ -94,7 +94,7 @@ export abstract class Shape {
     return [`${this.tag}#${this.id}`, ...details.filter(Boolean)].join(" ");
   }
 
-  toRecord(): ShapeRecord {
+  inspect(): Omit<ShapeRecord, "children"> {
     return {
       tag: this.tag,
       attributes: {
@@ -103,8 +103,11 @@ export abstract class Shape {
         ...Object.fromEntries(this.appearance),
         ...(this.transform.toAttribute() ? { transform: this.transform.toAttribute()! } : {}),
       },
-      children: this.children.map((child) => child.toRecord()),
     };
+  }
+
+  toRecord(): ShapeRecord {
+    return { ...this.inspect(), children: this.children.map((child) => child.toRecord()) };
   }
 
   protected number(name: string): number {

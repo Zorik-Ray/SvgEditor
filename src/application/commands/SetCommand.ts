@@ -6,7 +6,7 @@ export class SetCommand extends EditCommand {
 
   protected override apply(document: SvgDocument): string {
     const shape = document.find(this.id);
-    const previous = shape.toRecord();
+    const previous = shape.inspect();
     const oldValue = this.name === "text" ? previous.text : previous.attributes[this.name];
     shape.set(this.name, this.value);
     const prefix = `${shape.tag}#${this.id}`;
