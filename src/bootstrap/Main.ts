@@ -1,14 +1,14 @@
-import type { LineExecutor, LineResult } from "../application/LineExecutor.js";
+import { EditorSession } from "../application/EditorSession.js";
+import { CommandDispatcher } from "../cli/CommandDispatcher.js";
+import { CliCommands } from "../cli/CliCommands.js";
 import { Repl } from "../cli/Repl.js";
 
-class Main implements LineExecutor {
-  async execute(line: string): Promise<LineResult> {
-    if (!line.trim() || line.trimStart().startsWith("#")) return { output: [] };
-    return { output: [], error: "no document. use 'init' or 'read' first" };
-  }
-
+class Main {
   static async run(): Promise<void> {
-    await new Repl(new Main()).run();
+    const session = new EditorSession();
+    const dispatcher = new CommandDispatcher(() => { session.requireDocument(); });
+    new CliCommands(dispatcher, session);
+    await new Repl(dispatcher).run();
   }
 }
 
