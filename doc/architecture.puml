@@ -1,0 +1,19 @@
+@startuml
+title SVG editor Phase 1
+package "bootstrap" as boot
+package "cli" as cli
+package "application" as app
+package "application/ports" as ports
+package "domain" as domain
+package "infrastructure" as infra
+boot --> cli
+boot --> app
+boot --> infra
+cli --> app
+app --> domain
+app --> ports
+ports --> domain
+infra --> ports
+infra --> domain
+infra --> app : shared ShapeFactory
+@enduml
