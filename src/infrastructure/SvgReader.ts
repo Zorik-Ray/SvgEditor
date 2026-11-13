@@ -42,11 +42,15 @@ export class SvgReader implements SvgDecoder {
     if (element.namespaceURI && element.namespaceURI !== "http://www.w3.org/2000/svg") {
       throw new Error(`unsupported SVG namespace: ${element.namespaceURI}`);
     }
-    const attributes: Record<string, string> = {};
+    const attributes: Record<string, string> = Object.create(null);
     for (let index = 0; index < element.attributes.length; index++) {
       const attribute = element.attributes.item(index)!;
       attributes[attribute.name] = attribute.value;
+      if (attribute.prefix && !["xmlns", "xml"].includes(attribute.prefix) && attribute.namespaceURI) {
+        attributes[`xmlns:${attribute.prefix}`] = attribute.namespaceURI;
+      }
     }
+    if (attributes.xmlns !== undefined) attributes.xmlns = "http://www.w3.org/2000/svg";
     const children: ShapeRecord[] = [];
     let text = "";
     for (const child of element.childNodes) {
