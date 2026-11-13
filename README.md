@@ -1,4 +1,6 @@
-# svg-editor
+# SvgEditor
+
+A TypeScript SVG editor with a CLI, undo/redo, and an object-oriented design.
 
 高级软件开发 Lab1 Phase 1：TypeScript 面向对象 SVG 命令行编辑器。采用 Command 实现撤销重做，采用 Composite 统一图形和分组操作。
 
