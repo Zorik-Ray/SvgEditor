@@ -1,5 +1,6 @@
 import { NumberValue } from "./NumberValue.js";
 import type { ShapeRecord } from "./ShapeRecord.js";
+import type { Group } from "./Group.js";
 
 export abstract class Shape {
   private readonly geometry = new Map<string, number>();
@@ -18,6 +19,10 @@ export abstract class Shape {
 
   get children(): readonly Shape[] {
     return [];
+  }
+
+  asGroup(): Group {
+    throw new Error(`not a container: ${this.id}`);
   }
 
   abstract clone(): Shape;
