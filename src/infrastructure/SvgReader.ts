@@ -16,6 +16,7 @@ export class SvgReader implements SvgDecoder {
     if (!root || (root.localName ?? root.tagName) !== "svg") throw new Error("expected an <svg> root");
     if (parsed.doctype) throw new Error("SVG document types are not supported");
     const record = this.record(root);
+    if (record.text?.trim()) throw new Error("unexpected text content in <svg>");
     const used = new Set<string>();
     if (record.attributes.id) used.add(record.attributes.id);
     for (const child of this.walk(record.children)) {

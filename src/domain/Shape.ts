@@ -30,6 +30,10 @@ export abstract class Shape {
   abstract clone(): Shape;
   protected abstract geometrySummary(): string;
 
+  validateContent(text: string): void {
+    if (text.trim()) throw new Error(`unexpected text content in <${this.tag}>`);
+  }
+
   move(dx: number, dy: number): void {
     NumberValue.parse(dx);
     NumberValue.parse(dy);

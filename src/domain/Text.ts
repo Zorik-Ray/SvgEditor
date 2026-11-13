@@ -11,6 +11,8 @@ export class Text extends Shape {
     else super.set(name, value);
   }
 
+  override validateContent(_text: string): void {}
+
   override clone(): Text {
     return this.copyAppearanceTo(new Text(this.id, this.number("x"), this.number("y"), this.content));
   }
