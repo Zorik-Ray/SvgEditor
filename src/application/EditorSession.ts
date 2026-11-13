@@ -3,11 +3,24 @@ import { NumberValue } from "../domain/NumberValue.js";
 import type { LineResult } from "./LineExecutor.js";
 import { HistoryManager } from "./HistoryManager.js";
 import type { EditCommand } from "./commands/EditCommand.js";
+import { ShapeFactory } from "./ShapeFactory.js";
+import { CreateCommand } from "./commands/CreateCommand.js";
+import { DeleteCommand } from "./commands/DeleteCommand.js";
+import { MoveCommand } from "./commands/MoveCommand.js";
+import { ScaleCommand } from "./commands/ScaleCommand.js";
+import { SetCommand } from "./commands/SetCommand.js";
+import { GroupCommand } from "./commands/GroupCommand.js";
+import { UngroupCommand } from "./commands/UngroupCommand.js";
+import { AddToCommand } from "./commands/AddToCommand.js";
+import { FrontCommand } from "./commands/FrontCommand.js";
+import { BackCommand } from "./commands/BackCommand.js";
 
 export class EditorSession {
   private document?: SvgDocument;
   private sourcePath?: string;
   private readonly history = new HistoryManager();
+
+  constructor(private readonly factory = new ShapeFactory()) {}
 
   requireDocument(): SvgDocument {
     if (!this.document) throw new Error("no document. use 'init' or 'read' first");
@@ -37,6 +50,24 @@ export class EditorSession {
   edit(command: EditCommand): LineResult {
     return { output: [this.history.execute(command, this.requireDocument())] };
   }
+
+  create(type: string, id: string, parameters: readonly string[], parentId?: string): LineResult {
+    return this.edit(new CreateCommand(this.factory, type, id, parameters, parentId));
+  }
+
+  delete(id: string): LineResult { return this.edit(new DeleteCommand(id)); }
+  move(id: string, dx: string, dy: string): LineResult {
+    return this.edit(new MoveCommand(id, NumberValue.parse(dx), NumberValue.parse(dy)));
+  }
+  scale(id: string, factor: string): LineResult {
+    return this.edit(new ScaleCommand(id, NumberValue.parse(factor)));
+  }
+  set(id: string, name: string, value: string): LineResult { return this.edit(new SetCommand(id, name, value)); }
+  group(id: string, members: readonly string[]): LineResult { return this.edit(new GroupCommand(id, members)); }
+  ungroup(id: string): LineResult { return this.edit(new UngroupCommand(id)); }
+  addto(groupId: string, id: string): LineResult { return this.edit(new AddToCommand(groupId, id)); }
+  front(id: string): LineResult { return this.edit(new FrontCommand(id)); }
+  back(id: string): LineResult { return this.edit(new BackCommand(id)); }
 
   undo(): LineResult {
     this.requireDocument();

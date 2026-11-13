@@ -23,3 +23,40 @@ test("init and canvas obey defaults, document guard and history boundaries", asy
   assert.equal(session.state().document?.attributes.width, "400");
   assert.equal((await dispatcher.execute("undo")).error, "undo not allowed after io command");
 });
+
+test("all six create types accept in and editing commands preserve failure state", async () => {
+  const session = new EditorSession();
+  const dispatcher = new CommandDispatcher(() => { session.requireDocument(); });
+  new CliCommands(dispatcher, session);
+  await dispatcher.execute("init");
+  await dispatcher.execute("create g scene");
+  const commands = [
+    "create rect r 1 2 3 4 #fff in scene",
+    "create circle c 1 2 3 in scene",
+    "create ellipse e 1 2 3 4 in scene",
+    "create line l 1 2 3 4 black in scene",
+    'create text t 1 2 "in scene" in scene',
+    "create g nested in scene",
+    "move scene 1 2",
+    "scale scene 2",
+    'set t text ""',
+    "front r", "back r", "addto nested r", "ungroup nested",
+    "group pair c e", "undo", "redo", "delete pair", "undo",
+  ];
+  for (const command of commands) assert.equal((await dispatcher.execute(command)).error, undefined, command);
+  const before = session.state();
+  const errors = [
+    ["create rect r 0 0 1 1", "id already exists: r"],
+    ["move missing 1 2", "no such shape: missing"],
+    ["scale r 0", "scale factor must be positive"],
+    ["set r opacity 0.5", "unknown attribute: opacity"],
+    ["create box n1", "unknown shape type: box (is the plugin loaded?)"],
+    ["create g nope in r", "not a container: r"],
+    ["create g nope in missing", "no such container: missing"],
+    ["ungroup scene", "cannot ungroup top-level container: scene"],
+  ] as const;
+  for (const [command, expected] of errors) {
+    assert.equal((await dispatcher.execute(command)).error, expected, command);
+    assert.deepEqual(session.state(), before, command);
+  }
+});
