@@ -16,13 +16,21 @@ import { FrontCommand } from "./commands/FrontCommand.js";
 import { BackCommand } from "./commands/BackCommand.js";
 import type { Shape } from "../domain/Shape.js";
 import type { ShapeDetails, TreeNode } from "./Inspection.js";
+import type { SvgEncoder } from "./ports/SvgEncoder.js";
+import type { SvgDecoder } from "./ports/SvgDecoder.js";
+import type { FileStore } from "./ports/FileStore.js";
 
 export class EditorSession {
   private document?: SvgDocument;
   private sourcePath?: string;
   private readonly history = new HistoryManager();
 
-  constructor(private readonly factory = new ShapeFactory()) {}
+  constructor(
+    private readonly factory = new ShapeFactory(),
+    private readonly decoder?: SvgDecoder,
+    private readonly encoder?: SvgEncoder,
+    private readonly files?: FileStore,
+  ) {}
 
   requireDocument(): SvgDocument {
     if (!this.document) throw new Error("no document. use 'init' or 'read' first");
@@ -47,6 +55,27 @@ export class EditorSession {
     document.resize(NumberValue.parse(width), height === undefined ? document.height : NumberValue.parse(height));
     this.history.barrier();
     return { output: [`canvas resized to ${document.width}x${document.height}`] };
+  }
+
+  async read(file: string): Promise<LineResult> {
+    if (!this.files || !this.decoder) throw new Error("SVG reading is not configured");
+    const source = await this.files.read(file);
+    const imported = this.decoder.decode(source);
+    this.document = imported.document;
+    this.sourcePath = file;
+    this.history.barrier();
+    return { output: [`read ${file} (${imported.document.count} elements)`], warnings: imported.warnings };
+  }
+
+  async save(file?: string): Promise<LineResult> {
+    const document = this.requireDocument();
+    const target = file ?? this.sourcePath;
+    if (target === undefined) throw new Error("no file path. use 'save <file.svg>'");
+    if (!this.files || !this.encoder) throw new Error("SVG writing is not configured");
+    const content = this.encoder.encode(document);
+    await this.files.write(target, content);
+    this.history.barrier();
+    return { output: [`saved to ${target} (${document.count} elements)`] };
   }
 
   edit(command: EditCommand): LineResult {

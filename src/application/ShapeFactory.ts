@@ -71,6 +71,7 @@ export class ShapeFactory {
     const id = record.attributes.id;
     if (!id) throw new Error(`missing id on <${record.tag}>`);
     const shape = definition.build(id, record.attributes, record.text ?? "");
+    shape.validateContent(record.text ?? "");
     shape.importAttributes(record.attributes);
     if (record.children.length) {
       const group = shape.asGroup();

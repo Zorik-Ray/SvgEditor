@@ -15,6 +15,17 @@ export class CliCommands {
   }
 
   private documents(): void {
+    this.dispatcher.register("read", {
+      syntax: "read <file.svg>", withoutDocument: true,
+      run: (arguments_) => this.session.read(arguments_.count(1).at(0)),
+    });
+    this.dispatcher.register("save", {
+      syntax: "save [file.svg]", withoutDocument: false,
+      run: (arguments_) => {
+        arguments_.count(0, 1);
+        return this.session.save(arguments_.tokens[0]?.value);
+      },
+    });
     this.dispatcher.register("init", {
       syntax: "init [w] [h]",
       withoutDocument: true,
