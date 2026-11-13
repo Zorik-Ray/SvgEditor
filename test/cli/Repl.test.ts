@@ -26,3 +26,23 @@ test("REPL awaits each command and continues after a reported error", async () =
   assert.equal(output.read()?.toString(), "first\nlast\n");
   assert.equal(errors.read()?.toString(), "error: invalid command\n");
 });
+
+test("SIGINT stops queued commands and releases its signal listener", async () => {
+  const before = process.listenerCount("SIGINT");
+  const executed: string[] = [];
+  await new Repl(
+    {
+      async execute(line) {
+        executed.push(line);
+        process.emit("SIGINT");
+        return { output: [] };
+      },
+    },
+    Readable.from(["first\nsecond\nthird\n"]),
+    new PassThrough(),
+    new PassThrough(),
+    false,
+  ).run();
+  assert.deepEqual(executed, ["first"]);
+  assert.equal(process.listenerCount("SIGINT"), before);
+});

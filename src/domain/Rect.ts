@@ -1,8 +1,8 @@
 import { Shape } from "./Shape.js";
 
 export class Rect extends Shape {
-  constructor(id: string, x: number, y: number, width: number, height: number) {
-    super(id, "rect", { x, y, width, height }, ["width", "height"], [["x", "y"]]);
+  constructor(id: string, coordinateX: number, coordinateY: number, width: number, height: number) {
+    super(id, "rect", { x: coordinateX, y: coordinateY, width, height }, ["width", "height"], [["x", "y"]]);
   }
 
   override clone(): Rect {

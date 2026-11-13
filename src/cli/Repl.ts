@@ -18,8 +18,12 @@ export class Repl {
       terminal: this.interactive,
       crlfDelay: Infinity,
     });
-    lines.on("SIGINT", () => lines.close());
-    const interrupt = (): void => lines.close();
+    let interrupted = false;
+    const interrupt = (): void => {
+      interrupted = true;
+      lines.close();
+    };
+    lines.on("SIGINT", interrupt);
     process.on("SIGINT", interrupt);
     try {
       if (this.interactive) {
@@ -28,6 +32,7 @@ export class Repl {
         lines.prompt();
       }
       for await (const line of lines) {
+        if (interrupted) break;
         const result = await this.executor.execute(line);
         for (const message of result.output) this.output.write(`${message}\n`);
         for (const warning of result.warnings ?? []) this.errors.write(`${warning}\n`);

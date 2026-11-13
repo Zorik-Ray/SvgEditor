@@ -1,17 +1,10 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { HistoryManager } from "../../src/application/HistoryManager.js";
-import { EditCommand } from "../../src/application/commands/EditCommand.js";
 import { Rect } from "../../src/domain/Rect.js";
 import { SvgDocument } from "../../src/domain/SvgDocument.js";
 
-class TestEdit extends EditCommand {
-  constructor(private readonly action: (document: SvgDocument) => void) { super(); }
-  protected override apply(document: SvgDocument): string {
-    this.action(document);
-    return "changed";
-  }
-}
+import { TestEdit } from "../support/TestEdit.js";
 
 test("history records exact states, clears redo on edits, and honors IO barriers", () => {
   const history = new HistoryManager();

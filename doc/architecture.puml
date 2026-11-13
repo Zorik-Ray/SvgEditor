@@ -1,4 +1,5 @@
 @startuml
+!pragma layout smetana
 title SVG editor Phase 1
 package "bootstrap" as boot
 package "cli" as cli
