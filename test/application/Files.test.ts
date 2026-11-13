@@ -2,23 +2,10 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { EditorSession } from "../../src/application/EditorSession.js";
 import { ShapeFactory } from "../../src/application/ShapeFactory.js";
-import type { FileStore } from "../../src/application/ports/FileStore.js";
 import { SvgReader } from "../../src/infrastructure/SvgReader.js";
 import { SvgWriter } from "../../src/infrastructure/SvgWriter.js";
 
-class MemoryStore implements FileStore {
-  readonly contents = new Map<string, string>();
-  failWrites = false;
-  async read(file: string): Promise<string> {
-    const content = this.contents.get(file);
-    if (content === undefined) throw new Error(`cannot read file: ${file}`);
-    return content;
-  }
-  async write(file: string, content: string): Promise<void> {
-    if (this.failWrites) throw new Error(`cannot write file: ${file}`);
-    this.contents.set(file, content);
-  }
-}
+import { MemoryStore } from "../support/MemoryStore.js";
 
 test("file operations commit document, path and history only on success", async () => {
   const factory = new ShapeFactory();

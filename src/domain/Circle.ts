@@ -1,8 +1,8 @@
 import { Shape } from "./Shape.js";
 
 export class Circle extends Shape {
-  constructor(id: string, cx: number, cy: number, r: number) {
-    super(id, "circle", { cx, cy, r }, ["r"], [["cx", "cy"]]);
+  constructor(id: string, cx: number, cy: number, radius: number) {
+    super(id, "circle", { cx, cy, r: radius }, ["r"], [["cx", "cy"]]);
   }
 
   override clone(): Circle {
