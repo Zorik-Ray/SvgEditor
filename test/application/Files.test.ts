@@ -1,0 +1,53 @@
+import assert from "node:assert/strict";
+import { test } from "node:test";
+import { EditorSession } from "../../src/application/EditorSession.js";
+import { ShapeFactory } from "../../src/application/ShapeFactory.js";
+import type { FileStore } from "../../src/application/ports/FileStore.js";
+import { SvgReader } from "../../src/infrastructure/SvgReader.js";
+import { SvgWriter } from "../../src/infrastructure/SvgWriter.js";
+
+class MemoryStore implements FileStore {
+  readonly contents = new Map<string, string>();
+  failWrites = false;
+  async read(file: string): Promise<string> {
+    const content = this.contents.get(file);
+    if (content === undefined) throw new Error(`cannot read file: ${file}`);
+    return content;
+  }
+  async write(file: string, content: string): Promise<void> {
+    if (this.failWrites) throw new Error(`cannot write file: ${file}`);
+    this.contents.set(file, content);
+  }
+}
+
+test("file operations commit document, path and history only on success", async () => {
+  const factory = new ShapeFactory();
+  const files = new MemoryStore();
+  const session = new EditorSession(factory, new SvgReader(factory), new SvgWriter(), files);
+  session.init();
+  session.create("rect", "r", ["0", "0", "10", "10"]);
+  session.undo();
+  const before = session.state();
+  await assert.rejects(session.read("missing.svg"), /cannot read file: missing.svg/);
+  files.contents.set("invalid.svg", '<svg><circle id="bad" r="-1"/></svg>');
+  await assert.rejects(session.read("invalid.svg"));
+  files.failWrites = true;
+  await assert.rejects(session.save("fail.svg"), /cannot write file: fail.svg/);
+  assert.deepEqual(session.state(), before);
+  session.redo();
+  files.failWrites = false;
+  await session.save("demo.svg");
+  assert.throws(() => session.undo(), /undo not allowed after io command/);
+  session.move("r", "1", "2");
+  session.undo();
+  assert.throws(() => session.undo(), /nothing to undo/);
+  files.contents.set("source.svg", '<svg width="400" height="300"><rect width="10" height="10"/></svg>');
+  const imported = await session.read("source.svg");
+  assert.deepEqual(imported.warnings, ["warning: assigned id rect1 to unnamed <rect>"]);
+  session.set("rect1", "fill", "red");
+  await session.save();
+  assert.match(files.contents.get("source.svg")!, /fill="red"/);
+  assert.equal(session.state().sourcePath, "source.svg");
+  await session.save("copy.svg");
+  assert.equal(session.state().sourcePath, "source.svg");
+});
