@@ -33,3 +33,35 @@ test("document snapshots own an independent graph and reconstruct the index", ()
   document.resize(200, 100);
   assert.equal(snapshot.width, 400);
 });
+
+test("composite operations recurse through nested groups without overriding child styles", () => {
+  const outer = new Group("outer");
+  const inner = new Group("inner");
+  const rect = new Rect("r", 10, 20, 30, 40);
+  inner.insertChild(rect);
+  outer.insertChild(inner);
+  outer.set("fill", "blue");
+  rect.set("fill", "red");
+  outer.move(5, -10);
+  outer.scale(2);
+  assert.deepEqual(rect.toRecord().attributes, {
+    id: "r", x: "30", y: "20", width: "60", height: "80", fill: "red",
+  });
+  assert.equal(outer.toRecord().attributes.fill, "blue");
+  assert.deepEqual(outer.clone().toRecord(), outer.toRecord());
+});
+
+test("imported translate and uniform scale survive cloning and geometric edits", () => {
+  const group = new Group("node");
+  group.importAttributes({ transform: "translate(200,0) scale(0.8)" });
+  const rect = new Rect("r", 0, 0, 100, 50);
+  group.insertChild(rect);
+  group.move(8, 0);
+  assert.equal(rect.toRecord().attributes.x, "10");
+  group.scale(2);
+  assert.equal(rect.toRecord().attributes.x, "20");
+  assert.equal(rect.toRecord().attributes.width, "200");
+  assert.equal(group.toRecord().attributes.transform, "translate(400,0) scale(0.8)");
+  assert.deepEqual(group.clone().toRecord(), group.toRecord());
+  assert.throws(() => group.set("transform", "rotate(90)"), /unknown attribute/);
+});

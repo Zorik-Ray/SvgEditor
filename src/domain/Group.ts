@@ -30,12 +30,14 @@ export class Group extends Shape {
   override move(dx: number, dy: number): void {
     NumberValue.parse(dx);
     NumberValue.parse(dy);
-    for (const child of this.members) child.move(dx, dy);
+    const [localX, localY] = this.localDelta(dx, dy);
+    for (const child of this.members) child.move(localX, localY);
   }
 
   override scale(factor: number): void {
     NumberValue.positive(factor, "scale factor");
     for (const child of this.members) child.scale(factor);
+    this.scaleTransformTranslation(factor);
   }
 
   override clone(): Group {
