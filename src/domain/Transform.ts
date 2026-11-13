@@ -11,15 +11,23 @@ export class Transform {
     const pattern = /(translate|scale)\s*\(([^()]*)\)/g;
     let consumed = 0;
     for (const match of source.matchAll(pattern)) {
-      if (source.slice(consumed, match.index).trim()) throw new Error(`unsupported transform: ${source}`);
-      const values = match[2]!.trim().split(/[\s,]+/).filter(Boolean).map((value) => NumberValue.parse(value));
-      if (values.length < 1 || values.length > 2) throw new Error(`invalid transform: ${source}`);
+      const separator = source.slice(consumed, match.index);
+      if (!(consumed ? /^[\s,]*$/ : /^\s*$/).test(separator)) throw new Error(`unsupported transform: ${source}`);
+      const parameters = match[2]!.trim();
+      const components = parameters.split(/[\s,]+/);
+      if (components.length > 2 || /^,|,$|,\s*,/.test(parameters)
+        || components.some((value) => !/^[+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?$/.test(value))) {
+        throw new Error(`invalid transform: ${source}`);
+      }
+      const values = components.map((value) => NumberValue.parse(value));
       if (match[1] === "translate") {
         result.offsetX += result.multiplier * values[0]!;
         result.offsetY += result.multiplier * (values[1] ?? 0);
       } else {
         if (values[1] !== undefined && values[1] !== values[0]) throw new Error("only uniform scale transforms are supported");
-        result.multiplier *= NumberValue.positive(values[0]!, "transform scale");
+        result.multiplier = NumberValue.positive(
+          result.multiplier * NumberValue.positive(values[0]!, "transform scale"), "transform scale",
+        );
       }
       NumberValue.parse(result.multiplier);
       NumberValue.parse(result.offsetX);

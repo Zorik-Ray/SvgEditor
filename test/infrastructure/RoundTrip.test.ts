@@ -38,6 +38,23 @@ test("transform parsing preserves composition order and rejects unsupported oper
   }
 });
 
+test("supported transforms accept SVG separators and decimal notation without accepting malformed arguments", () => {
+  assert.equal(Transform.parse("translate(1,2), scale(.5), translate(-4e1 +6)").toAttribute(),
+    "translate(-19,5) scale(0.5)");
+  for (const source of [
+    ",translate(1)", "translate(1),", "translate(1,,2)", "translate(1,)", "scale(,2)", "scale(0x2)",
+  ]) assert.throws(() => Transform.parse(source), source);
+});
+
+test("composed positive scales never produce a zero or infinite transform multiplier", () => {
+  for (const source of ["scale(1e-200) scale(1e-200)", "scale(1e200) scale(1e200)"]) {
+    assert.throws(() => Transform.parse(source), source);
+  }
+  const reader = new SvgReader(new ShapeFactory());
+  const document = reader.decode('<svg><g id="g" transform="translate(1), scale(1e-200)"><rect id="r"/></g></svg>').document;
+  assert.deepEqual(reader.decode(new SvgWriter().encode(document)).document.toRecord(), document.toRecord());
+});
+
 test("reader never silently drops unrecognized text or nested elements", () => {
   const reader = new SvgReader(new ShapeFactory());
   for (const source of [
