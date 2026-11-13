@@ -44,6 +44,25 @@ test("tree includes geometry, subtree queries and show expose details without to
   assert.deepEqual(session.state(), before);
 });
 
+test("show reads a container's own properties without serializing its descendants", (context) => {
+  const session = new EditorSession();
+  session.init();
+  session.create("g", "scene", []);
+  session.create("rect", "r", ["1", "2", "3", "4"], "scene");
+  session.set("scene", "fill", "blue");
+  const before = session.state();
+  const descendant = session.requireDocument().find("r");
+  const serialization = context.mock.method(descendant, "toRecord", () => {
+    throw new Error("show should not serialize unrelated descendants");
+  });
+  assert.deepEqual(session.show("scene"), {
+    heading: "g#scene  parent=svg", attributes: { fill: "blue" }, text: undefined,
+  });
+  assert.equal(serialization.mock.callCount(), 0);
+  serialization.mock.restore();
+  assert.deepEqual(session.state(), before);
+});
+
 test("all six create types accept in and editing commands preserve failure state", async () => {
   const session = new EditorSession();
   const dispatcher = new CommandDispatcher(() => { session.requireDocument(); });

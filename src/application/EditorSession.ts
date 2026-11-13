@@ -112,7 +112,7 @@ export class EditorSession {
   show(id: string): ShapeDetails {
     const document = this.requireDocument();
     const shape = document.find(id);
-    const record = shape.toRecord();
+    const record = shape.inspect();
     const parent = document.parentOf(id);
     const { id: omitted, ...attributes } = record.attributes;
     void omitted;

@@ -29,3 +29,10 @@ test("invalid XML, duplicate IDs and unsupported shape types are rejected", () =
     '<svg viewBox="0 0 0 20"/>',
   ]) assert.throws(() => reader.decode(source), source);
 });
+
+test("explicit root and shape IDs containing whitespace cannot enter a document", () => {
+  const reader = new SvgReader(new ShapeFactory());
+  for (const source of ['<svg id="canvas one"/>', '<svg><g id="node one"/></svg>']) {
+    assert.throws(() => reader.decode(source), /id must not contain whitespace/);
+  }
+});

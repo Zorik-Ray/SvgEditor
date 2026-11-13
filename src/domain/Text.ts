@@ -17,8 +17,8 @@ export class Text extends Shape {
     return this.copyAppearanceTo(new Text(this.id, this.number("x"), this.number("y"), this.content));
   }
 
-  override toRecord(): ShapeRecord {
-    return { ...super.toRecord(), text: this.content };
+  override inspect(): Omit<ShapeRecord, "children"> {
+    return { ...super.inspect(), text: this.content };
   }
 
   protected override geometrySummary(): string {

@@ -2,6 +2,7 @@ import { NumberValue } from "./NumberValue.js";
 import type { ShapeRecord } from "./ShapeRecord.js";
 import type { Group } from "./Group.js";
 import { Transform } from "./Transform.js";
+import { ShapeId } from "./ShapeId.js";
 
 export abstract class Shape {
   private readonly geometry = new Map<string, number>();
@@ -15,7 +16,7 @@ export abstract class Shape {
     private readonly nonnegative: readonly string[],
     private readonly positionPairs: readonly (readonly [string, string])[],
   ) {
-    if (!id.trim()) throw new Error("id must not be empty");
+    ShapeId.validate(id);
     this.updateGeometry(geometry);
   }
 
@@ -94,7 +95,7 @@ export abstract class Shape {
     return [`${this.tag}#${this.id}`, ...details.filter(Boolean)].join(" ");
   }
 
-  toRecord(): ShapeRecord {
+  inspect(): Omit<ShapeRecord, "children"> {
     return {
       tag: this.tag,
       attributes: {
@@ -103,8 +104,11 @@ export abstract class Shape {
         ...Object.fromEntries(this.appearance),
         ...(this.transform.toAttribute() ? { transform: this.transform.toAttribute()! } : {}),
       },
-      children: this.children.map((child) => child.toRecord()),
     };
+  }
+
+  toRecord(): ShapeRecord {
+    return { ...this.inspect(), children: this.children.map((child) => child.toRecord()) };
   }
 
   protected number(name: string): number {

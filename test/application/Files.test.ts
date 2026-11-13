@@ -60,3 +60,21 @@ test("root ID collisions fail atomically after read and preserve the current his
   assert.deepEqual((await session.read("generated.svg")).warnings,
     ["warning: assigned id rect2 to unnamed <rect>"]);
 });
+
+test("unrepresentable imported transforms preserve the existing document, source path and redo", async () => {
+  const factory = new ShapeFactory();
+  const files = new MemoryStore();
+  const session = new EditorSession(factory, new SvgReader(factory), new SvgWriter(), files);
+  files.contents.set("source.svg", '<svg><rect id="r"/></svg>');
+  await session.read("source.svg");
+  session.move("r", "10", "20");
+  session.undo();
+  const before = session.state();
+  for (const transform of ["scale(1e-200) scale(1e-200)", "scale(1e200) scale(1e200)"]) {
+    files.contents.set("invalid.svg", `<svg><g id="g" transform="${transform}"><rect/></g></svg>`);
+    await assert.rejects(session.read("invalid.svg"));
+    assert.deepEqual(session.state(), before);
+  }
+  session.redo();
+  assert.equal(session.state().document?.children[0]?.attributes.x, "10");
+});

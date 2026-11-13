@@ -21,6 +21,16 @@ test("one factory creates all six types from CLI and SVG records", () => {
   assert.throws(() => factory.create("g", "g", ["extra"]), /invalid parameters/);
 });
 
+test("shape IDs preserve case and Unicode while rejecting whitespace", () => {
+  const factory = new ShapeFactory();
+  for (const id of ["node A", "node\tA", "node\nA", "node\rA"]) {
+    assert.throws(() => factory.create("g", id, []), /id must not contain whitespace/);
+  }
+  for (const id of ["node-A", "Node-A", "节点-1", "1"]) {
+    assert.equal(factory.create("g", id, []).id, id);
+  }
+});
+
 test("set allows exactly the shared and per-type attribute whitelist", () => {
   const factory = new ShapeFactory();
   const cases: readonly [string, readonly string[], readonly string[]][] = [
