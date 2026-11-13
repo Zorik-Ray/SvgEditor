@@ -67,7 +67,9 @@ export class SvgDocument {
     const subtree = this.walk([shape]);
     const seen = new Set<string>();
     for (const node of subtree) {
-      if (this.has(node.id) || seen.has(node.id)) throw new Error(`id already exists: ${node.id}`);
+      if (this.rootAttributes.id === node.id || this.has(node.id) || seen.has(node.id)) {
+        throw new Error(`id already exists: ${node.id}`);
+      }
       seen.add(node.id);
     }
     const length = parent?.children.length ?? this.rootShapes.length;

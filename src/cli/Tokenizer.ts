@@ -14,7 +14,7 @@ export class Tokenizer {
     for (let index = 0; index < line.length; index++) {
       const character = line[index]!;
       const next = line[index + 1];
-      if (insideQuotes && character === "\\" && (next === '"' || next === "\\")) {
+      if (insideQuotes && character === "\\" && next === '"') {
         value += next;
         index++;
         continue;

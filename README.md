@@ -64,6 +64,7 @@ node ../dist/src/bootstrap/Main.js < session.txt
 - SVG：支持上述六类及嵌套、课程示例的 translate/正均匀 scale，保留导入的额外属性；不支持的元素/变换明确报错。`set` 始终严格遵守课程白名单。
 - `save` 无参数使用 read 来源路径；init 创建的新文档须显式提供保存路径。
 - 未初始化时按课程通用规则报无文档错误；先执行 init 或 read 再使用 help。
+- 带空格的文字、盘符路径和网络路径使用双引号，例如 `read "D:\我的 图形\demo.svg"` 或 `read "\\server\shared folder\demo.svg"`。反斜杠原样保留，只有 `\"` 表示文字中的英文双引号。
 
 完整的架构、课程对照、设计解释、开发过程、质量证据与人工验收清单见 [doc/README.md](doc/README.md)。
 

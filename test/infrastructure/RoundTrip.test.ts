@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { DOMParser } from "@xmldom/xmldom";
 import { ShapeFactory } from "../../src/application/ShapeFactory.js";
 import { SvgReader } from "../../src/infrastructure/SvgReader.js";
 import { SvgWriter } from "../../src/infrastructure/SvgWriter.js";
@@ -45,4 +46,27 @@ test("reader never silently drops unrecognized text or nested elements", () => {
     "<svg><text id=\"t\"><tspan>lost</tspan></text></svg>",
   ]) assert.throws(() => reader.decode(source), source);
   assert.equal(reader.decode('<svg><text id="t">   </text></svg>').document.find("t").toRecord().text, "   ");
+});
+
+test("SVG prefixes and inherited attribute namespaces survive saving and reparenting", () => {
+  const reader = new SvgReader(new ShapeFactory());
+  const writer = new SvgWriter();
+  const document = reader.decode(`
+    <s:svg xmlns:s="http://www.w3.org/2000/svg" xmlns="urn:other" width="400" height="300">
+      <s:g id="scene" xmlns:meta="urn:notes">
+        <s:rect id="r" width="4" height="5" meta:note="preserve me"/>
+      </s:g>
+      <s:g id="target"/>
+    </s:svg>`).document;
+  document.insert(document.detach("r"), "target");
+  const serialized = writer.encode(document);
+  const parsed = new DOMParser({
+    onError: (_level, message) => { throw new Error(message); },
+  }).parseFromString(serialized, "application/xml");
+  assert.equal(parsed.documentElement?.namespaceURI, "http://www.w3.org/2000/svg");
+  const rectangle = parsed.getElementsByTagName("rect").item(0)!;
+  assert.equal(rectangle.namespaceURI, "http://www.w3.org/2000/svg");
+  assert.equal(rectangle.getAttributeNode("meta:note")?.namespaceURI, "urn:notes");
+  assert.equal(rectangle.getAttribute("meta:note"), "preserve me");
+  assert.deepEqual(reader.decode(serialized).document.toRecord(), document.toRecord());
 });
