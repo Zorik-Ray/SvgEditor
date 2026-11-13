@@ -7,6 +7,8 @@ import { HistoryManager } from "../../src/application/HistoryManager.js";
 import { GroupCommand } from "../../src/application/commands/GroupCommand.js";
 import { UngroupCommand } from "../../src/application/commands/UngroupCommand.js";
 import { AddToCommand } from "../../src/application/commands/AddToCommand.js";
+import { FrontCommand } from "../../src/application/commands/FrontCommand.js";
+import { BackCommand } from "../../src/application/commands/BackCommand.js";
 
 test("group retains original order across parents and undo restores all positions", () => {
   const document = new SvgDocument();
@@ -23,6 +25,23 @@ test("group retains original order across parents and undo restores all position
   assert.deepEqual(document.toRecord(), before);
   history.redo();
   assert.equal(document.count, 5);
+});
+
+test("front and back only reorder siblings and are exactly reversible", () => {
+  const document = new SvgDocument();
+  const history = new HistoryManager();
+  document.insert(new Group("scene"));
+  for (const id of ["a", "b", "c"]) document.insert(new Rect(id, 0, 0, 1, 1), "scene");
+  const before = document.toRecord();
+  history.execute(new FrontCommand("a"), document);
+  assert.deepEqual(document.find("scene").children.map((child) => child.id), ["b", "c", "a"]);
+  history.execute(new BackCommand("c"), document);
+  assert.deepEqual(document.find("scene").children.map((child) => child.id), ["c", "b", "a"]);
+  history.undo();
+  history.undo();
+  assert.deepEqual(document.toRecord(), before);
+  history.redo();
+  assert.equal(document.parentOf("a")?.id, "scene");
 });
 
 test("ungroup expands in place, addto appends, and illegal hierarchies are rejected atomically", () => {
