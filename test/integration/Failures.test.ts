@@ -39,7 +39,7 @@ test("every applicable course error preserves document, redo, path and IO lock",
   }
   for (const command of [
     "init 0 10", "canvas 10 NaN", "move r 1 Infinity", "scale r NaN", "create rect bad 0 0 -1 1",
-    "group bad r r", "addto scene scene", "create text bad 1 2 \"broken",
+    "group bad r r", "addto scene scene", "create text bad 1 2 \"broken", 'create g "two words"',
   ]) {
     assert.ok((await dispatcher.execute(command)).error, command);
     assert.deepEqual(session.state(), before, command);

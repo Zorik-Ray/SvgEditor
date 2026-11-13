@@ -2,6 +2,7 @@ import { Group } from "./Group.js";
 import { NumberValue } from "./NumberValue.js";
 import type { Shape } from "./Shape.js";
 import type { ShapeRecord } from "./ShapeRecord.js";
+import { ShapeId } from "./ShapeId.js";
 
 export interface ShapeLocation {
   readonly parentId?: string;
@@ -19,6 +20,7 @@ export class SvgDocument {
   constructor(width = 800, height = 600, attributes: Readonly<Record<string, string>> = {}) {
     this.canvasWidth = NumberValue.positive(width, "canvas width");
     this.canvasHeight = NumberValue.positive(height, "canvas height");
+    if (attributes.id !== undefined) ShapeId.validate(attributes.id);
     this.rootAttributes = { ...attributes };
   }
 

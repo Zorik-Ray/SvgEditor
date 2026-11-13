@@ -2,6 +2,7 @@ import { NumberValue } from "./NumberValue.js";
 import type { ShapeRecord } from "./ShapeRecord.js";
 import type { Group } from "./Group.js";
 import { Transform } from "./Transform.js";
+import { ShapeId } from "./ShapeId.js";
 
 export abstract class Shape {
   private readonly geometry = new Map<string, number>();
@@ -15,7 +16,7 @@ export abstract class Shape {
     private readonly nonnegative: readonly string[],
     private readonly positionPairs: readonly (readonly [string, string])[],
   ) {
-    if (!id.trim()) throw new Error("id must not be empty");
+    ShapeId.validate(id);
     this.updateGeometry(geometry);
   }
 
