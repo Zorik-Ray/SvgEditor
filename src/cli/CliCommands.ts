@@ -1,5 +1,7 @@
 import type { EditorSession } from "../application/EditorSession.js";
 import type { CommandDispatcher } from "./CommandDispatcher.js";
+import { TreePrinter } from "./TreePrinter.js";
+import { ShowPrinter } from "./ShowPrinter.js";
 
 export class CliCommands {
   constructor(
@@ -9,6 +11,7 @@ export class CliCommands {
     this.documents();
     this.histories();
     this.edits();
+    this.displays();
   }
 
   private documents(): void {
@@ -91,6 +94,38 @@ export class CliCommands {
     this.dispatcher.register("back", {
       syntax: "back <id>", withoutDocument: false,
       run: (arguments_) => this.session.back(arguments_.count(1).at(0)),
+    });
+  }
+
+  private displays(): void {
+    this.dispatcher.register("tree", {
+      syntax: "tree [id]", withoutDocument: false,
+      run: (arguments_) => {
+        arguments_.count(0, 1);
+        return { output: new TreePrinter().render(this.session.tree(arguments_.tokens[0]?.value)) };
+      },
+    });
+    this.dispatcher.register("show", {
+      syntax: "show <id>", withoutDocument: false,
+      run: (arguments_) => ({ output: new ShowPrinter().render(this.session.show(arguments_.count(1).at(0))) }),
+    });
+    this.dispatcher.register("help", {
+      syntax: "help", withoutDocument: false,
+      run: (arguments_) => {
+        arguments_.count(0);
+        return { output: [
+          ...this.dispatcher.syntaxes(),
+          "",
+          "create rect <id> <x> <y> <w> <h> [fill] [in <containerId>]",
+          "create circle <id> <cx> <cy> <r> [fill] [in <containerId>]",
+          "create ellipse <id> <cx> <cy> <rx> <ry> [fill] [in <containerId>]",
+          "create line <id> <x1> <y1> <x2> <y2> [stroke] [in <containerId>]",
+          'create text <id> <x> <y> "content" [in <containerId>]',
+          "create g <id> [in <containerId>]",
+          "init/read/save/canvas resize begin a new undo history; tree/show/help/canvas query do not.",
+          "Lines beginning with # are comments; quote arguments containing spaces.",
+        ] };
+      },
     });
   }
 }

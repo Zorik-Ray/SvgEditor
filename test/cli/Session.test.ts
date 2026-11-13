@@ -24,6 +24,26 @@ test("init and canvas obey defaults, document guard and history boundaries", asy
   assert.equal((await dispatcher.execute("undo")).error, "undo not allowed after io command");
 });
 
+test("tree includes geometry, subtree queries and show expose details without touching history", async () => {
+  const session = new EditorSession();
+  const dispatcher = new CommandDispatcher(() => { session.requireDocument(); });
+  new CliCommands(dispatcher, session);
+  for (const command of ["init", "create g scene", 'create text title 20 40 "My Diagram" in scene']) {
+    assert.equal((await dispatcher.execute(command)).error, undefined);
+  }
+  const before = session.state();
+  assert.deepEqual((await dispatcher.execute("tree")).output, [
+    "svg (800x600)", "└── g#scene", '    └── text#title (20,40) "My Diagram"',
+  ]);
+  assert.deepEqual((await dispatcher.execute("tree title")).output, ['text#title (20,40) "My Diagram"']);
+  assert.deepEqual((await dispatcher.execute("show title")).output,
+    ["text#title  parent=g#scene", "  x=20", "  y=40", '  text="My Diagram"']);
+  const help = (await dispatcher.execute("help")).output.join("\n");
+  for (const command of ["init", "canvas", "create", "delete", "move", "scale", "set", "group", "ungroup",
+    "addto", "front", "back", "tree", "show", "help", "undo", "redo"]) assert.match(help, new RegExp(`^${command}\\b`, "m"));
+  assert.deepEqual(session.state(), before);
+});
+
 test("all six create types accept in and editing commands preserve failure state", async () => {
   const session = new EditorSession();
   const dispatcher = new CommandDispatcher(() => { session.requireDocument(); });
