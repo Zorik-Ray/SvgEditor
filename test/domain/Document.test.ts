@@ -34,6 +34,22 @@ test("document snapshots own an independent graph and reconstruct the index", ()
   assert.equal(snapshot.width, 400);
 });
 
+test("an imported root ID stays reserved through insertion and snapshot restoration", () => {
+  const document = new SvgDocument(400, 300, { id: "canvas" });
+  document.insert(new Rect("r", 0, 0, 10, 20));
+  document.insert(new Group("Canvas"));
+  const before = document.toRecord();
+  assert.throws(() => document.insert(new Group("canvas")), /id already exists: canvas/);
+  const subtree = new Group("scene");
+  subtree.insertChild(new Rect("canvas", 0, 0, 1, 1));
+  assert.throws(() => document.insert(subtree), /id already exists: canvas/);
+  assert.deepEqual(document.toRecord(), before);
+  const restored = new SvgDocument();
+  restored.restore(document.clone());
+  assert.throws(() => restored.insert(new Group("canvas")), /id already exists: canvas/);
+  assert.deepEqual(restored.toRecord(), before);
+});
+
 test("composite operations recurse through nested groups without overriding child styles", () => {
   const outer = new Group("outer");
   const inner = new Group("inner");

@@ -38,3 +38,25 @@ test("file operations commit document, path and history only on success", async 
   await session.save("copy.svg");
   assert.equal(session.state().sourcePath, "source.svg");
 });
+
+test("root ID collisions fail atomically after read and preserve the current history segment", async () => {
+  const factory = new ShapeFactory();
+  const files = new MemoryStore();
+  const session = new EditorSession(factory, new SvgReader(factory), new SvgWriter(), files);
+  files.contents.set("root.svg", '<svg id="canvas"><rect id="r"/><circle id="c"/></svg>');
+  await session.read("root.svg");
+  const blocked = session.state();
+  assert.throws(() => session.create("g", "canvas", []), /id already exists: canvas/);
+  assert.deepEqual(session.state(), blocked);
+  session.move("r", "1", "2");
+  session.undo();
+  const before = session.state();
+  assert.throws(() => session.group("canvas", ["r", "c"]), /id already exists: canvas/);
+  assert.deepEqual(session.state(), before);
+  session.redo();
+  await session.save();
+  assert.equal(new SvgReader(factory).decode(files.contents.get("root.svg")!).document.count, 2);
+  files.contents.set("generated.svg", '<svg id="rect1"><rect/></svg>');
+  assert.deepEqual((await session.read("generated.svg")).warnings,
+    ["warning: assigned id rect2 to unnamed <rect>"]);
+});
